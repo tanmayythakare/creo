@@ -1,0 +1,19 @@
+# Binary
+creo.exe
+creo
+
+# Runtime state (local only, never commit)
+.creo/
+
+# Go build artifacts
+*.test
+*.out
+dist/
+
+# GoReleaser
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
