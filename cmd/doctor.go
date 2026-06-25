@@ -6,9 +6,9 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/doctor"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/doctor"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 var doctorCmd = &cobra.Command{

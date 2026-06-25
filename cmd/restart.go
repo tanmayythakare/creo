@@ -3,13 +3,14 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
-	"github.com/tanmaythakare/creo/internal/workflow"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/workflow"
 )
 
 var restartCmd = &cobra.Command{
@@ -79,12 +80,15 @@ func runRestart(cmd *cobra.Command, args []string) error {
 		}
 		if killed {
 			fmt.Printf("  %s %s   %s\n", ui.SymCheck, name, ui.Dim.Render("stopped"))
-		} else {
-			fmt.Printf("  %s %s   %s\n", ui.SymEmpty, name, ui.Dim.Render("already stopped"))
 		}
-	} else {
-		fmt.Printf("  %s %s   %s\n", ui.SymEmpty, name, ui.Dim.Render("already stopped"))
 	}
+
+	svcPath := svc.Path
+	if svcPath == "" {
+		svcPath = "."
+	}
+	absPath := filepath.Join(cwd, svcPath)
+	svc = workflow.ResolveCommand(name, svc, absPath, cwd)
 
 	var launchErr error
 	ui.SpinUntil("relaunching "+name, func() {

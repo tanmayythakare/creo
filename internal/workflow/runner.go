@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 // LaunchTab opens a new Windows Terminal tab for a single service
@@ -30,12 +30,18 @@ func LaunchTab(name string, svc config.Service, root string, verbose bool) error
 	_ = os.MkdirAll(filepath.Join(root, ".creo"), 0755)
 
 	pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", name))
+	_ = os.Remove(pidFile)
+
 	writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter """ProcessId=$PID""").ParentProcessId ^| Out-File -FilePath '%s' -Encoding ascii`, pidFile)
-	shellCmd := fmt.Sprintf(`%s && cd /d "%s" && %s`, writePIDCmd, absPath, svc.Command)
+	safeCmd := strings.ReplaceAll(svc.Command, ";", `\;`)
+	shellCmd := fmt.Sprintf(`%s && %s`, writePIDCmd, safeCmd)
 
 	args := []string{
+		"-w", "0",
 		"new-tab",
+		"-d", absPath,
 		"--title", name,
+		"--suppressApplicationTitle",
 		"cmd", "/k", shellCmd,
 	}
 
@@ -49,7 +55,6 @@ func LaunchTab(name string, svc config.Service, root string, verbose bool) error
 		return fmt.Errorf("✗ failed to start wt.exe: %v. Fix: Check if Windows Terminal is correctly installed", err)
 	}
 
-	CollectAndRegisterPIDs(root, []string{name})
 	return nil
 }
 
@@ -61,16 +66,18 @@ func buildWTArgs(services []serviceEntry, root string) []string {
 	for i, entry := range services {
 		absPath := filepath.Join(root, entry.svc.Path)
 		pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", entry.name))
+		_ = os.Remove(pidFile)
+
 		writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter """ProcessId=$PID""").ParentProcessId ^| Out-File -FilePath '%s' -Encoding ascii`, pidFile)
-		escapedCommand := strings.ReplaceAll(entry.svc.Command, `"`, `\"`)
-		shellCmd := fmt.Sprintf(`%s && cd /d "%s" && %s`, writePIDCmd, absPath, escapedCommand)
+		safeCmd := strings.ReplaceAll(entry.svc.Command, ";", `\;`)
+		shellCmd := fmt.Sprintf(`%s && %s`, writePIDCmd, safeCmd)
 
 		if i == 0 {
-			// First tab: new-tab
-			args = append(args, "new-tab", "--title", entry.name, "cmd", "/k", shellCmd)
+			// First tab: attach to window 0 then new-tab
+			args = append(args, "-w", "0", "new-tab", "-d", absPath, "--title", entry.name, "--suppressApplicationTitle", "cmd", "/k", shellCmd)
 		} else {
 			// Additional tabs: semicolon separator then new-tab
-			args = append(args, ";", "new-tab", "--title", entry.name, "cmd", "/k", shellCmd)
+			args = append(args, ";", "new-tab", "-d", absPath, "--title", entry.name, "--suppressApplicationTitle", "cmd", "/k", shellCmd)
 		}
 	}
 

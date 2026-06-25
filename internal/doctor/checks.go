@@ -9,16 +9,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tanmaythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/config"
 )
 
 // CheckResult holds the result of a single tool check
 type CheckResult struct {
-	Tool      string
-	Available bool
-	Version   string
+	Tool        string
+	Available   bool
+	Version     string
 	InstallHint string
-	Warning   string
+	Warning     string
 }
 
 // ServiceReport holds all check results for one service
@@ -166,14 +166,14 @@ func commandExists(binary string) bool {
 // getVersion tries to get a short version string for known tools
 func getVersion(tool string) string {
 	versionArgs := map[string][]string{
-		"node":   {"--version"},
-		"npm":    {"--version"},
-		"npx":    {"--version"},
-		"java":   {"-version"},
-		"mvn":    {"--version"},
-		"go":     {"version"},
-		"docker": {"--version"},
-		"python": {"--version"},
+		"node":    {"--version"},
+		"npm":     {"--version"},
+		"npx":     {"--version"},
+		"java":    {"-version"},
+		"mvn":     {"--version"},
+		"go":      {"version"},
+		"docker":  {"--version"},
+		"python":  {"--version"},
 		"python3": {"--version"},
 		"cargo":   {"--version"},
 		"php":     {"--version"},

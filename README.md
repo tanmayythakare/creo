@@ -21,6 +21,14 @@
 
 ---
 
+## How it Works
+
+<p align="center">
+  <img src="assets/flow.png" alt="Creo Architecture Flow">
+</p>
+
+---
+
 ## Install
 
 ### For users — download the binary
@@ -188,17 +196,7 @@ Service names are restricted to `[a-zA-Z0-9_-]` to keep logs and registry record
 **What does `.creo/` contain?**
 Runtime state only — `pids.json` (active process registry) and `creo.lock` (instance lock). Never commit it.
 
----
 
-## Roadmap
-
-| Version | What's coming |
-|---|---|
-| **v0.1.0** ✅ | `init`, `up`, `stop`, `status`, `restart`, `doctor`, `version` · 38 tests |
-| **v2** | `creo new` — scaffold new projects · SPA landing page · winget distribution |
-| **v3** | `creo logs` · `creo update` · macOS/Linux · Homebrew tap |
-
----
 
 ## Contributing
 

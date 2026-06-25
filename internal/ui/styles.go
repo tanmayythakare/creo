@@ -17,11 +17,11 @@ var (
 	Bold         = lipgloss.NewStyle().Bold(true)
 
 	// Symbols
-	SymCheck  = SuccessStyle.Render("✓")
-	SymCross  = Failure.Render("✗")
-	SymDot    = SuccessStyle.Render("●")
-	SymEmpty  = Dim.Render("○")
-	SymArrow  = Dim.Render("→")
+	SymCheck = SuccessStyle.Render("✓")
+	SymCross = Failure.Render("✗")
+	SymDot   = SuccessStyle.Render("●")
+	SymEmpty = Dim.Render("○")
+	SymArrow = Dim.Render("→")
 
 	// Header style
 	Header = lipgloss.NewStyle().

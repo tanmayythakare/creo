@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 // RunWizard drives the full creo init interactive flow
@@ -48,6 +48,10 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 
 		opt := ui.Ask("Option", "5")
 		if opt == "5" || strings.ToLower(opt) == "done" {
+			if len(services) == 0 {
+				ui.Warn("You must add at least one service before finishing.")
+				continue
+			}
 			break
 		}
 
@@ -81,6 +85,12 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 					ui.Warn("Service name can only contain alphanumeric characters, underscores, and hyphens. Please try again.")
 					continue
 				}
+				// YAML reserved words check
+				reserved := map[string]bool{"yes": true, "no": true, "on": true, "off": true, "true": true, "false": true, "null": true}
+				if reserved[strings.ToLower(name)] {
+					ui.Warn("Service name cannot be a YAML reserved word (yes, no, on, off, true, false, null). Please try again.")
+					continue
+				}
 				// P1: Check duplicate service name
 				duplicate := false
 				for _, s := range services {
@@ -112,9 +122,14 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 					ui.Warn("Service path cannot contain '..', '*', or '?'.")
 					continue
 				}
-				// P1: check if service path exists, warn if not
-				if _, err := os.Stat(path); os.IsNotExist(err) {
-					ui.Warn(fmt.Sprintf("Path '%s' does not exist.", path))
+				fi, err := os.Stat(path)
+				if os.IsNotExist(err) {
+					ui.Warn(fmt.Sprintf("Path '%s' does not exist. Please try again.", path))
+					continue
+				}
+				if err == nil && !fi.IsDir() {
+					ui.Warn(fmt.Sprintf("Path '%s' is a file, not a directory. Please try again.", path))
+					continue
 				}
 				break
 			}
@@ -247,10 +262,16 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 					ui.Warn("Service path cannot contain '..', '*', or '?'.")
 					continue
 				}
-				s.Path = path
-				if _, err := os.Stat(s.Path); os.IsNotExist(err) {
-					ui.Warn(fmt.Sprintf("Path '%s' does not exist.", s.Path))
+				fi, err := os.Stat(path)
+				if os.IsNotExist(err) {
+					ui.Warn(fmt.Sprintf("Path '%s' does not exist. Please try again.", path))
+					continue
 				}
+				if err == nil && !fi.IsDir() {
+					ui.Warn(fmt.Sprintf("Path '%s' is a file, not a directory. Please try again.", path))
+					continue
+				}
+				s.Path = path
 				break
 			}
 
@@ -311,11 +332,6 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 		serviceNames = append(serviceNames, name)
 	}
 
-	if len(serviceNames) == 0 {
-		ui.Warn("No services added. You can edit creo.yml manually later.")
-		return cfg, nil
-	}
-
 	// --- Workflows ---
 	ui.Section("Workflows")
 
@@ -333,7 +349,7 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 			ui.Warn("Workflow name cannot be empty or only spaces. Please try again.")
 			continue
 		}
-		if isBuiltinCommand(defaultWorkflow) {
+		if IsBuiltinCommand(defaultWorkflow) {
 			ui.Warn(fmt.Sprintf("Workflow name '%s' conflicts with built-in command. Please try again.", defaultWorkflow))
 			continue
 		}
@@ -358,7 +374,11 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 				ui.Warn("Workflow name cannot be empty or only spaces. Please try again.")
 				continue
 			}
-			if isBuiltinCommand(wfName) {
+			if strings.Contains(wfName, " ") {
+				wfName = strings.ReplaceAll(wfName, " ", "-")
+				ui.Info(fmt.Sprintf("  Spaces converted to hyphens: '%s'", wfName))
+			}
+			if IsBuiltinCommand(wfName) {
 				ui.Warn(fmt.Sprintf("Workflow name '%s' conflicts with built-in command. Please try again.", wfName))
 				continue
 			}
@@ -395,7 +415,7 @@ func isValidServiceName(name string) bool {
 	return true
 }
 
-func isBuiltinCommand(name string) bool {
+func IsBuiltinCommand(name string) bool {
 	builtins := map[string]bool{
 		"init":    true,
 		"up":      true,

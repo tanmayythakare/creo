@@ -56,13 +56,13 @@ func TestScan(t *testing.T) {
 	t.Run("skips node_modules vendor dist", func(t *testing.T) {
 		skipDir := filepath.Join(tempDir, "skip")
 		os.Mkdir(skipDir, 0755)
-		
+
 		for _, name := range []string{"node_modules", "vendor", "dist"} {
 			d := filepath.Join(skipDir, name)
 			os.Mkdir(d, 0755)
 			os.WriteFile(filepath.Join(d, "package.json"), []byte("{}"), 0644)
 		}
-		
+
 		res, err := Scan(skipDir)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)

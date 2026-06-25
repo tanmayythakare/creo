@@ -6,9 +6,9 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 var stopCmd = &cobra.Command{
@@ -53,7 +53,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 	fmt.Println(ui.SectionHeader("stop"))
 	fmt.Println()
 
-	nameCol := lipgloss.NewStyle().Width(12)
+	nameCol := lipgloss.NewStyle().Width(24)
 	statusCol := lipgloss.NewStyle().Width(10)
 	pidCol := lipgloss.NewStyle().Width(10)
 
@@ -77,14 +77,14 @@ func runStop(cmd *cobra.Command, args []string) error {
 		if killed {
 			fmt.Printf("  %s %s %s %s\n",
 				ui.SymCheck,
-				nameCol.Render(name),
+				nameCol.Render(ui.Truncate(name, 24)),
 				statusCol.Render("killed"),
 				pidCol.Render(ui.Dim.Render(fmt.Sprintf("pid %d", pid))),
 			)
 		} else {
 			fmt.Printf("  %s %s %s\n",
 				ui.SymEmpty,
-				nameCol.Render(name),
+				nameCol.Render(ui.Truncate(name, 24)),
 				ui.Dim.Render("already stopped"),
 			)
 		}
@@ -113,14 +113,14 @@ func runStop(cmd *cobra.Command, args []string) error {
 			if killed {
 				fmt.Printf("  %s %s %s %s\n",
 					ui.SymCheck,
-					nameCol.Render(name),
+					nameCol.Render(ui.Truncate(name, 24)),
 					statusCol.Render("killed"),
 					pidCol.Render(ui.Dim.Render(fmt.Sprintf("pid %d", pid))),
 				)
 			} else {
 				fmt.Printf("  %s %s %s\n",
 					ui.SymEmpty,
-					nameCol.Render(name),
+					nameCol.Render(ui.Truncate(name, 24)),
 					ui.Dim.Render("already stopped"),
 				)
 			}
@@ -128,7 +128,11 @@ func runStop(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	fmt.Println("  all services stopped")
+	if len(args) > 0 {
+		fmt.Println("  service stopped")
+	} else {
+		fmt.Println("  all services stopped")
+	}
 	fmt.Println()
 
 	return nil

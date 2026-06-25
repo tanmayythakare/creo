@@ -6,9 +6,9 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 var statusCmd = &cobra.Command{
@@ -38,7 +38,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	fmt.Println(ui.SectionHeader("status"))
 	fmt.Println()
 
-	nameCol := lipgloss.NewStyle().Width(14)
+	nameCol := lipgloss.NewStyle().Width(24)
 	cmdCol := lipgloss.NewStyle().Width(24)
 	statusCol := lipgloss.NewStyle().Width(12)
 
@@ -54,7 +54,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 		fmt.Printf("  %s %s %s %s\n",
 			sym,
-			nameCol.Render(ui.Truncate(name, 14)),
+			nameCol.Render(ui.Truncate(name, 24)),
 			cmdCol.Render(ui.Truncate(svc.Command, 24)),
 			statusCol.Render(statusText),
 		)

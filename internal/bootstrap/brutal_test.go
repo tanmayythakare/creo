@@ -9,11 +9,11 @@ import (
 
 // brutalTest describes one real-world scenario for end-to-end Scan+Detect testing.
 type brutalTest struct {
-	name    string
-	setup   func(dir string) error // creates files in the temp dir
-	want    []string               // expected Framework strings in results (at least one)
-	noWant  []string               // frameworks that must NOT appear
-	wantN   int                    // minimum number of detected services (0 = don't check)
+	name   string
+	setup  func(dir string) error // creates files in the temp dir
+	want   []string               // expected Framework strings in results (at least one)
+	noWant []string               // frameworks that must NOT appear
+	wantN  int                    // minimum number of detected services (0 = don't check)
 }
 
 var brutalTests = []brutalTest{

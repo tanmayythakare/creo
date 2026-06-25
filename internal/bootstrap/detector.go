@@ -13,7 +13,7 @@ import (
 const maxFileReadSize = 1 * 1024 * 1024
 
 // creoModuleName is used to skip self-detection when creo's own go.mod is found at the project root. (#5)
-const creoModuleName = "github.com/tanmaythakare/creo"
+const creoModuleName = "github.com/tanmayythakare/creo"
 
 // DetectedService is what the detector infers about a directory
 type DetectedService struct {
@@ -65,13 +65,13 @@ func sanitizeServiceName(name string) string {
 		switch {
 		case unicode.IsLetter(r), unicode.IsDigit(r), r == '-', r == '_', r == '.':
 			b.WriteRune(r)
-		case r == ' ', r == '\t':
+		case r == ' ', r == '\t', r == '@', r == '/':
 			b.WriteRune('-')
 		default:
 			// drop other special characters
 		}
 	}
-	result := b.String()
+	result := strings.TrimLeft(b.String(), "-")
 	if result == "" {
 		return "service"
 	}
@@ -81,9 +81,14 @@ func sanitizeServiceName(name string) string {
 func detectEntry(root string, entry DirEntry) DetectedService {
 	fileSet := toSet(entry.Files)
 
+	name := sanitizeServiceName(entry.Path)
+	if name == "." {
+		name = sanitizeServiceName(filepath.Base(root))
+	}
+
 	svc := DetectedService{
 		Path:       entry.Path,
-		Name:       sanitizeServiceName(entry.Path), // (#6) sanitize spaces/special chars
+		Name:       name, // (#6) sanitize spaces/special chars
 		Confidence: "unknown",
 	}
 
@@ -206,7 +211,11 @@ func detectEntry(root string, entry DirEntry) DetectedService {
 	// pom.xml is checked before build.gradle so Maven wins the conflict (#7).
 	if fileSet["pom.xml"] {
 		svc.Framework = "Spring Boot (Maven)"
-		svc.SuggestedCmd = "mvn spring-boot:run"
+		if fileSet["mvnw.cmd"] || fileSet["mvnw"] {
+			svc.SuggestedCmd = `.\mvnw spring-boot:run`
+		} else {
+			svc.SuggestedCmd = "mvn spring-boot:run"
+		}
 		svc.Confidence = "high"
 		return svc
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 // IsRunning checks if a service's PID is alive and belongs to a terminal shell
@@ -83,7 +83,7 @@ func StopService(reg Registry, name, root string) (bool, int, error) {
 	}
 
 	fmt.Println()
-	ui.Warn(fmt.Sprintf("⚠ Stopping '%s' will kill its entire process tree (node, vite, etc.)\n  This cannot be undone.", name))
+	ui.Warn(fmt.Sprintf("⚠ Stopping '%s' will kill its entire process tree.\n  This cannot be undone.", name))
 	choice := ui.Ask("Proceed? [Y/n]", "y")
 	choice = strings.ToLower(strings.TrimSpace(choice))
 	if choice != "y" && choice != "yes" && choice != "" {

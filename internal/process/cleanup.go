@@ -1,7 +1,7 @@
 package process
 
 import (
-	"github.com/tanmaythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/config"
 	"os"
 )
 

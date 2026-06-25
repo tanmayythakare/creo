@@ -10,10 +10,10 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"github.com/tanmaythakare/creo/internal/bootstrap"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/bootstrap"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 var initCmd = &cobra.Command{
@@ -83,13 +83,20 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Printf("  found %d services:\n\n", len(detected))
 
-	nameCol := lipgloss.NewStyle().Width(12)
+	maxNameLen := 12
+	for _, d := range detected {
+		if len(d.Name) > maxNameLen {
+			maxNameLen = len(d.Name)
+		}
+	}
+
+	nameCol := lipgloss.NewStyle().Width(maxNameLen)
 	frameworkCol := lipgloss.NewStyle().Width(16)
 	cmdCol := lipgloss.NewStyle().Width(30)
 
 	for _, d := range detected {
 		fmt.Printf("  %s %s %s\n",
-			nameCol.Render(ui.Truncate(d.Path, 12)),
+			nameCol.Render(ui.Truncate(d.Name, maxNameLen)),
 			frameworkCol.Render(ui.Truncate(d.Framework, 16)),
 			cmdCol.Render(ui.Truncate(d.SuggestedCmd, 30)),
 		)
@@ -109,7 +116,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 					ui.Warn("Workflow name cannot be empty or only spaces. Please try again.")
 					continue
 				}
-				if isBuiltinCommand(wfName) {
+				if strings.Contains(wfName, " ") {
+					wfName = strings.ReplaceAll(wfName, " ", "-")
+					ui.Info(fmt.Sprintf("Spaces in workflow name converted to hyphens: '%s'", wfName))
+				}
+				if bootstrap.IsBuiltinCommand(wfName) {
 					ui.Warn(fmt.Sprintf("Workflow name '%s' conflicts with built-in command. Please try again.", wfName))
 					continue
 				}
@@ -134,11 +145,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 			var serviceNames []string
 			for _, d := range detected {
-				cfg.Services[d.Path] = config.Service{
+				cfg.Services[d.Name] = config.Service{
 					Path:    d.Path,
 					Command: d.SuggestedCmd,
 				}
-				serviceNames = append(serviceNames, d.Path)
+				serviceNames = append(serviceNames, d.Name)
 			}
 			cfg.Workflows[wfName] = serviceNames
 		}
@@ -194,20 +205,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	return nil
-}
-
-func isBuiltinCommand(name string) bool {
-	builtins := map[string]bool{
-		"init":    true,
-		"up":      true,
-		"status":  true,
-		"stop":    true,
-		"restart": true,
-		"doctor":  true,
-		"version": true,
-		"help":    true,
-	}
-	return builtins[strings.ToLower(name)]
 }
 
 func printConfigSummary(cfg *config.Config) {

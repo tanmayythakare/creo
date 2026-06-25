@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tanmaythakare/creo/cmd"
+	"github.com/tanmayythakare/creo/cmd"
 )
 
 const Version = "0.1.0"

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 // Registry maps service name → PID

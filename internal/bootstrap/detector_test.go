@@ -60,6 +60,12 @@ func TestDetect(t *testing.T) {
 		assertDetection(t, svc, "Spring Boot (Maven)", "mvn spring-boot:run", "high")
 	})
 
+	t.Run("Spring Boot Maven Wrapper", func(t *testing.T) {
+		entry := DirEntry{Path: "backend", Files: []string{"pom.xml", "mvnw.cmd"}}
+		svc := detectEntry(".", entry)
+		assertDetection(t, svc, "Spring Boot (Maven)", `.\mvnw spring-boot:run`, "high")
+	})
+
 	t.Run("Go", func(t *testing.T) {
 		tmp := t.TempDir()
 		dir := "api"
@@ -205,7 +211,7 @@ func TestDetect(t *testing.T) {
 
 	t.Run("Creo own go.mod is skipped", func(t *testing.T) {
 		tmp := t.TempDir()
-		modContent := "module github.com/tanmaythakare/creo\n\ngo 1.21\n"
+		modContent := "module github.com/tanmayythakare/creo\n\ngo 1.21\n"
 		os.WriteFile(filepath.Join(tmp, "go.mod"), []byte(modContent), 0644)
 
 		entry := DirEntry{Path: ".", Files: []string{"go.mod"}}
@@ -223,6 +229,14 @@ func TestDetect(t *testing.T) {
 		svc := detectEntry(".", entry)
 		if svc.Name != "frontend-app" {
 			t.Errorf("expected sanitized name 'frontend-app', got '%s'", svc.Name)
+		}
+	})
+
+	t.Run("Scoped package sanitized", func(t *testing.T) {
+		entry := DirEntry{Path: "@myorg/frontend", Files: []string{"package.json"}}
+		svc := detectEntry(".", entry)
+		if svc.Name != "myorg-frontend" {
+			t.Errorf("expected sanitized name 'myorg-frontend', got '%s'", svc.Name)
 		}
 	})
 

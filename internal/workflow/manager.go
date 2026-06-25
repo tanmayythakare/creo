@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/pterm/pterm"
-	"github.com/tanmaythakare/creo/internal/config"
-	"github.com/tanmaythakare/creo/internal/doctor"
-	"github.com/tanmaythakare/creo/internal/process"
-	"github.com/tanmaythakare/creo/internal/ui"
+	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/doctor"
+	"github.com/tanmayythakare/creo/internal/process"
+	"github.com/tanmayythakare/creo/internal/ui"
 )
 
 // Start runs a named workflow — cleans stale PIDs, checks ports, launches tabs
@@ -90,6 +90,9 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 			ui.Warn(fmt.Sprintf("Service '%s' path '%s' is a file, not a directory. Skipping.", name, absPath))
 			continue
 		}
+
+		svc = ResolveCommand(name, svc, absPath, root)
+		cfg.Services[name] = svc
 
 		// P0 check: services already running → warn + ask to skip or restart
 		pid, running, errVerify := process.VerifyPID(reg, name, root)
@@ -168,6 +171,7 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 		}
 		resultsChan := make(chan launchResult, len(toLaunch))
 
+		// Start processes concurrently inside Windows Terminal tabs (non-blocking)
 		for _, name := range toLaunch {
 			go func(n string) {
 				svc := cfg.Services[n]
@@ -176,17 +180,80 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 			}(name)
 		}
 
+		// Wait for launch triggers to complete
+		failed := make(map[string]bool)
 		for i := 0; i < len(toLaunch); i++ {
 			res := <-resultsChan
-			sp := spinners[res.name]
 			if res.err != nil {
+				failed[res.name] = true
+				sp := spinners[res.name]
 				sp.Fail(fmt.Sprintf("%s: %v", res.name, res.err))
-			} else {
-				sp.Success(res.name)
 			}
 		}
 
+		// Sequential polling for PIDs in the main thread (prevents stdout printing conflicts)
+		endTime := time.Now().Add(15 * time.Second)
+		pending := make(map[string]bool)
+		for _, name := range toLaunch {
+			if !failed[name] {
+				pending[name] = true
+			}
+		}
+
+		for time.Now().Before(endTime) && len(pending) > 0 {
+			time.Sleep(100 * time.Millisecond)
+
+			for name := range pending {
+				pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", name))
+				content, err := os.ReadFile(pidFile)
+				if err == nil {
+					pidStr := strings.TrimSpace(string(content))
+					if pid, err := strconv.Atoi(pidStr); err == nil && pid > 0 {
+						_ = process.SetPID(root, name, pid)
+						_ = os.Remove(pidFile)
+						delete(pending, name)
+						sp := spinners[name]
+						sp.Success(name)
+					}
+				}
+			}
+		}
+
+		// Mark any remaining services that timed out as failed
+		for name := range pending {
+			pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", name))
+			_ = os.Remove(pidFile)
+			sp := spinners[name]
+			sp.Fail(fmt.Sprintf("%s: timed out waiting for process to start", name))
+		}
+
 		_, _ = multi.Stop()
+
+		// Print active services & clickable URLs summary
+		var startedServices []string
+		for _, name := range toLaunch {
+			if !failed[name] && !pending[name] {
+				startedServices = append(startedServices, name)
+			}
+		}
+
+		if len(startedServices) > 0 {
+			fmt.Println()
+			ui.Section("Active Services & Logs")
+			for _, name := range startedServices {
+				svc := cfg.Services[name]
+				ports := findPorts(svc.Command)
+				if len(ports) > 0 {
+					var urls []string
+					for _, p := range ports {
+						urls = append(urls, fmt.Sprintf("http://localhost:%d", p))
+					}
+					fmt.Printf("  • %s: %s (Logs in terminal tab)\n", ui.Bold.Render(name), strings.Join(urls, ", "))
+				} else {
+					fmt.Printf("  • %s: Started (Logs in terminal tab)\n", ui.Bold.Render(name))
+				}
+			}
+		}
 	}
 
 	duration := time.Since(start).Seconds()
@@ -222,4 +289,148 @@ func isPortInUse(port int) bool {
 		return true
 	}
 	return false
+}
+
+// ResolveCommand attempts to find local wrappers (mvnw, gradlew, npm bins) if the executable is missing from PATH
+func ResolveCommand(name string, svc config.Service, absPath string, root string) config.Service {
+	cmdParts := strings.Fields(svc.Command)
+	if len(cmdParts) == 0 {
+		return svc
+	}
+	cmdExe := cmdParts[0]
+	for _, part := range cmdParts {
+		if !strings.Contains(part, "=") {
+			cmdExe = part
+			break
+		}
+	}
+
+	targetExe := strings.ToLower(cmdExe)
+	if _, err := exec.LookPath(targetExe); err == nil {
+		return svc // Exists in PATH
+	}
+
+	var wrapperPath string
+	var wrapperFile string
+	var toolName string
+
+	// 1. Maven / Gradle wrappers
+	if targetExe == "mvn" || targetExe == "gradle" {
+		var candidateFiles []string
+		if targetExe == "mvn" {
+			candidateFiles = []string{"mvnw.cmd", "mvnw"}
+			toolName = "Maven wrapper"
+		} else {
+			candidateFiles = []string{"gradlew.bat", "gradlew"}
+			toolName = "Gradle wrapper"
+		}
+
+		for _, file := range candidateFiles {
+			p := filepath.Join(absPath, file)
+			if _, errStat := os.Stat(p); errStat == nil {
+				wrapperPath = filepath.Join(".", file)
+				wrapperFile = file
+				break
+			}
+		}
+		if wrapperPath == "" {
+			for _, file := range candidateFiles {
+				p := filepath.Join(root, file)
+				if _, errStat := os.Stat(p); errStat == nil {
+					wrapperPath = fmt.Sprintf(`"%s"`, p)
+					wrapperFile = file
+					break
+				}
+			}
+		}
+	}
+
+	// 2. Node.js local binaries (e.g. vite, next, tsc inside node_modules/.bin)
+	if wrapperPath == "" {
+		nodeBinPath := filepath.Join("node_modules", ".bin")
+		for _, ext := range []string{".cmd", ".bat", ".ps1", ""} {
+			p := filepath.Join(absPath, nodeBinPath, cmdExe+ext)
+			if _, errStat := os.Stat(p); errStat == nil {
+				wrapperPath = filepath.Join(".", nodeBinPath, cmdExe+ext)
+				wrapperFile = filepath.Base(p)
+				toolName = "Node package binary"
+				break
+			}
+			pRoot := filepath.Join(root, nodeBinPath, cmdExe+ext)
+			if _, errStat := os.Stat(pRoot); errStat == nil {
+				wrapperPath = fmt.Sprintf(`"%s"`, pRoot)
+				wrapperFile = filepath.Base(pRoot)
+				toolName = "Node package binary"
+				break
+			}
+		}
+	}
+
+	// 3. PHP Composer local binaries (e.g. phpunit inside vendor/bin)
+	if wrapperPath == "" {
+		composerBinPath := filepath.Join("vendor", "bin")
+		for _, ext := range []string{".bat", ".cmd", ""} {
+			p := filepath.Join(absPath, composerBinPath, cmdExe+ext)
+			if _, errStat := os.Stat(p); errStat == nil {
+				wrapperPath = filepath.Join(".", composerBinPath, cmdExe+ext)
+				wrapperFile = filepath.Base(p)
+				toolName = "PHP Composer binary"
+				break
+			}
+			pRoot := filepath.Join(root, composerBinPath, cmdExe+ext)
+			if _, errStat := os.Stat(pRoot); errStat == nil {
+				wrapperPath = fmt.Sprintf(`"%s"`, pRoot)
+				wrapperFile = filepath.Base(pRoot)
+				toolName = "PHP Composer binary"
+				break
+			}
+		}
+	}
+
+	// 4. Python Virtual Environments (venv, .venv, env)
+	if wrapperPath == "" && (strings.HasPrefix(targetExe, "python") || strings.HasPrefix(targetExe, "pip")) {
+		for _, envDir := range []string{".venv", "venv", "env"} {
+			p := filepath.Join(absPath, envDir, "Scripts", cmdExe+".exe")
+			if _, errStat := os.Stat(p); errStat == nil {
+				wrapperPath = filepath.Join(".", envDir, "Scripts", cmdExe+".exe")
+				wrapperFile = filepath.Base(p)
+				toolName = "Python virtualenv binary"
+				break
+			}
+			pRoot := filepath.Join(root, envDir, "Scripts", cmdExe+".exe")
+			if _, errStat := os.Stat(pRoot); errStat == nil {
+				wrapperPath = fmt.Sprintf(`"%s"`, pRoot)
+				wrapperFile = filepath.Base(pRoot)
+				toolName = "Python virtualenv binary"
+				break
+			}
+		}
+	}
+
+	// Apply replacement if local wrapper/binary resolved successfully
+	if wrapperPath != "" {
+		lowerCmd := strings.ToLower(svc.Command)
+		idx := strings.Index(lowerCmd, targetExe)
+		if idx != -1 {
+			svc.Command = svc.Command[:idx] + wrapperPath + svc.Command[idx+len(targetExe):]
+		} else {
+			svc.Command = strings.Replace(svc.Command, cmdExe, wrapperPath, 1)
+		}
+		ui.Info(fmt.Sprintf("Info: '%s' not found in PATH. Using local %s '%s' for service '%s'.", targetExe, toolName, wrapperFile, name))
+	} else {
+		if !strings.HasPrefix(cmdExe, ".") && !strings.Contains(cmdExe, "/") && !strings.Contains(cmdExe, "\\") {
+			existsLocally := false
+			for _, ext := range []string{"", ".exe", ".bat", ".cmd", ".com"} {
+				if _, errStat := os.Stat(filepath.Join(absPath, cmdExe+ext)); errStat == nil {
+					existsLocally = true
+					break
+				}
+			}
+			if !existsLocally {
+				ui.Warn(fmt.Sprintf("Executable '%s' not found in PATH. Service '%s' might fail to start.", cmdExe, name))
+			}
+		}
+	}
+
+	return svc
 }

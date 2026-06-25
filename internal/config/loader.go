@@ -140,9 +140,15 @@ func validate(cfg *Config) error {
 			}
 		}
 
-		matched, _ := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, name)
+		matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, name)
 		if !matched {
 			return fmt.Errorf("invalid service name: %q", name)
+		}
+
+		// YAML reserved words check
+		reserved := map[string]bool{"yes": true, "no": true, "on": true, "off": true, "true": true, "false": true, "null": true}
+		if reserved[strings.ToLower(name)] {
+			return fmt.Errorf("✗ service name '%s' is a YAML reserved word", name)
 		}
 
 		// YAML null values — treat null/empty path as "."

@@ -154,6 +154,21 @@ services:
 		}
 	})
 
+	t.Run("YAML reserved word rejection", func(t *testing.T) {
+		content := `
+project:
+  name: test
+services:
+  no:
+    command: run.sh
+`
+		os.WriteFile(filepath.Join(tempDir, "creo.yml"), []byte(content), 0644)
+		_, err := Load(tempDir)
+		if err == nil {
+			t.Fatal("expected error for YAML reserved word, got nil")
+		}
+	})
+
 	t.Run("single ampersand command rejection", func(t *testing.T) {
 		content := `
 project:
@@ -184,4 +199,3 @@ services:
 		}
 	})
 }
-

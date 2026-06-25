@@ -27,7 +27,7 @@ func PrintBanner() {
 
 	fmt.Println(accent.Render(asciiArt))
 	fmt.Println()
-	fmt.Println(dim.Render("  Welcome to Creo — kill startup friction"))
+	fmt.Println(dim.Render("  Welcome to Creo"))
 	fmt.Println(dim.Render("  v0.1.0"))
 	fmt.Println()
 }
@@ -49,10 +49,15 @@ func PrintBannerWithGlitch() {
 	glitchStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("8"))
 
-	totalFrames := 6
+	totalFrames := 12
+	// Pre-print 10 empty lines so we have space to move up without clipping
+	for i := 0; i < 10; i++ {
+		fmt.Println()
+	}
+
 	for frame := 0; frame < totalFrames; frame++ {
-		// Clear screen and reset cursor
-		fmt.Print("\033[H\033[2J")
+		// Move cursor up 10 lines (6 ascii + 1 empty + 2 text + 1 empty)
+		fmt.Print("\033[10A")
 
 		// Glitch probability decays linearly
 		prob := 0.85 * (1.0 - float64(frame)/float64(totalFrames))
@@ -74,14 +79,16 @@ func PrintBannerWithGlitch() {
 		}
 
 		fmt.Println()
-		fmt.Println(glitchStyle.Render("  Welcome to Creo — kill startup friction"))
+		fmt.Println(glitchStyle.Render("  Welcome to Creo"))
 		fmt.Println(glitchStyle.Render("  v0.1.0"))
 		fmt.Println()
 
-		time.Sleep(45 * time.Millisecond)
+		time.Sleep(110 * time.Millisecond)
 	}
 
 	// Final snap to clean banner
-	fmt.Print("\033[H\033[2J")
+	fmt.Print("\033[10A")
+	// Clear from cursor to end of screen to erase glitch artifacts cleanly
+	fmt.Print("\033[J")
 	PrintBanner()
 }

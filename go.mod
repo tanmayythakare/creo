@@ -1,4 +1,4 @@
-module github.com/tanmaythakare/creo
+module github.com/tanmayythakare/creo
 
 go 1.26.1
 
