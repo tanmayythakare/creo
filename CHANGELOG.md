@@ -1,9 +1,9 @@
 # Changelog
 
-## [0.1.0] - 2026-05-20
+## [0.1.0] - 2026-06-25
 ### Added
 - creo init — repo scanner, framework detector, interactive wizard
-- creo up — launches all services in Windows Terminal tabs
+- dynamic workflow subcommands (e.g. `creo dev`) — launches all services in Windows Terminal tabs
 - creo stop — kills running services
 - creo status — shows running/stopped per service
 - creo restart — stops and relaunches a service

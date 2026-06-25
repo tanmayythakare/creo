@@ -60,9 +60,9 @@ go test ./...
 git clone https://github.com/tanmaythakare/creo
 cd creo
 go build -o creo.exe .
-cd Testing
-..\creo.exe init
-..\creo.exe up <workflow-name>
+# Place it in your PATH, then in any project:
+creo init
+creo <workflow-name>
 ```
 
 ---
@@ -70,7 +70,7 @@ cd Testing
 ## How it works
 
 ```
-creo init  →  detects your stack  →  generates creo.yml  →  creo up  →  all tabs open  →  start coding
+creo init  →  detects your stack  →  generates creo.yml  →  creo <workflow>  →  all tabs open  →  start coding
 ```
 
 ---
@@ -82,8 +82,8 @@ creo init  →  detects your stack  →  generates creo.yml  →  creo up  →  
 creo init
 
 # Start a workflow (launches each service in its own wt.exe tab)
-creo up
-creo up boom          # run a specific workflow by name
+creo dev              # run the 'dev' workflow
+creo boom             # run the 'boom' workflow
 
 # Check what's running
 creo status
@@ -150,7 +150,7 @@ React · Angular · Next.js · Vue · NestJS · Express · Django · FastAPI · 
 | Command | Description |
 |---|---|
 | `creo init` | Detect stack, generate `creo.yml` |
-| `creo up [workflow]` | Start all services in separate terminal tabs |
+| `creo <workflow>` | Start all services in separate terminal tabs |
 | `creo stop [service]` | Stop all services, or one by name |
 | `creo status` | Show running/stopped state of all services |
 | `creo restart [service]` | Stop and restart a service |
@@ -188,7 +188,7 @@ The terminal tab stays open with output visible. `creo status` correctly reports
 ## FAQ
 
 **Can I name my workflow anything?**
-Yes. `boom`, `dev`, `full-project` — any key under `workflows:` in `creo.yml` works. Run with `creo up <name>`.
+Yes. `boom`, `dev`, `full-project` — any key under `workflows:` in `creo.yml` works. Run with `creo <name>`.
 
 **Can I use special characters in service names?**
 Service names are restricted to `[a-zA-Z0-9_-]` to keep logs and registry records clean.
