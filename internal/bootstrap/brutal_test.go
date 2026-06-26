@@ -131,6 +131,30 @@ var brutalTests = []brutalTest{
 		wantN:  0,
 		noWant: []string{"Next.js", "Django", "Go", "Laravel", "Flutter"},
 	},
+	{
+		name: "Test11_Nested_Frontend_Backend",
+		setup: func(dir string) error {
+			be := filepath.Join(dir, "backend")
+			fe := filepath.Join(dir, "frontend", "secondbrain-frontend")
+			for _, d := range []string{be, fe} {
+				if err := os.MkdirAll(d, 0755); err != nil {
+					return err
+				}
+			}
+			if err := os.WriteFile(filepath.Join(be, "pom.xml"),
+				[]byte(`<project></project>`), 0644); err != nil {
+				return err
+			}
+			if err := os.WriteFile(filepath.Join(fe, "angular.json"),
+				[]byte(`{}`), 0644); err != nil {
+				return err
+			}
+			return os.WriteFile(filepath.Join(fe, "package.json"),
+				[]byte(`{"dependencies":{"@angular/core":"16.0.0"}}`), 0644)
+		},
+		want:  []string{"Spring Boot (Maven)", "Angular"},
+		wantN: 2,
+	},
 }
 
 // TestBrutalScenarios runs Scan + Detect end-to-end on real temp directories,

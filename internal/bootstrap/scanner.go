@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+// maxScanDepth is how many directory levels below root we scan.
+// Depth 1 = backend/, depth 2 = frontend/secondbrain-frontend/, depth 3 = packages/apps/web/.
+const maxScanDepth = 3
+
+// maxDirsScanned is a safety valve — if a repo has more directories than this,
+// we stop scanning and proceed with whatever was found so far. Silent, no error.
+const maxDirsScanned = 500
+
 // ScanResult holds all discovered indicator files per directory
 type ScanResult struct {
 	Root    string
@@ -22,6 +30,8 @@ type DirEntry struct {
 var knownIndicators = []string{
 	"package.json",
 	"pom.xml",
+	"mvnw",
+	"mvnw.cmd",
 	"build.gradle",
 	"build.gradle.kts",
 	"go.mod",
@@ -75,42 +85,99 @@ var knownIndicators = []string{
 	"Podfile",
 }
 
-// Scan walks one level deep from root and collects indicator files
+// shouldSkipDir returns true for directories that should never be scanned at any depth.
+func shouldSkipDir(name string) bool {
+	if len(name) == 0 {
+		return true
+	}
+	if name[0] == '.' {
+		return true
+	}
+	switch name {
+	case "node_modules", "vendor", "target", "dist", "build":
+		return true
+	}
+	return false
+}
+
+// Scan walks up to maxScanDepth levels deep from root and collects indicator files.
+// Root is special: even if it contains indicator files, we still recurse into subdirectories
+// (monorepos often have a root package.json for workspace config plus services in subdirs).
+// Non-root directories prune on indicator found — if a dir has indicator files, we don't
+// descend further (that directory IS the service).
 func Scan(root string) (*ScanResult, error) {
 	result := &ScanResult{Root: root}
+	scanned := 0
 
 	// Check root itself
 	rootEntry, err := scanDir(root, ".")
 	if err == nil && len(rootEntry.Files) > 0 {
 		result.Entries = append(result.Entries, rootEntry)
 	}
+	scanned++
 
-	// Check immediate subdirectories
+	// Recurse into subdirectories
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, e := range entries {
-		if !e.IsDir() {
+		if !e.IsDir() || shouldSkipDir(e.Name()) {
 			continue
 		}
-		name := e.Name()
-		// skip hidden dirs and common non-service dirs
-		if name[0] == '.' || name == "node_modules" || name == "vendor" || name == "target" || name == "dist" || name == "build" {
-			continue
-		}
-		dirPath := filepath.Join(root, name)
-		entry, err := scanDir(dirPath, name)
-		if err != nil {
-			continue
-		}
-		if len(entry.Files) > 0 {
-			result.Entries = append(result.Entries, entry)
-		}
+		scanRecursive(result, root, e.Name(), 1, &scanned)
 	}
 
 	return result, nil
+}
+
+// scanRecursive walks a directory tree, collecting indicator files.
+// depth tracks current level (1 = immediate child of root).
+// scanned is a shared counter for the hard cap guardrail.
+func scanRecursive(result *ScanResult, root, relPath string, depth int, scanned *int) {
+	// Guardrail 3: hard cap on total directories scanned
+	if *scanned >= maxDirsScanned {
+		return
+	}
+	*scanned++
+
+	absPath := filepath.Join(root, relPath)
+
+	// Scan this directory for indicator files
+	entry, err := scanDir(absPath, relPath)
+	if err != nil {
+		return
+	}
+
+	// Guardrail 2: if indicators found, add entry and DON'T recurse deeper.
+	// This directory is a service — no need to scan its src/ or lib/ subdirs.
+	if len(entry.Files) > 0 {
+		result.Entries = append(result.Entries, entry)
+		return
+	}
+
+	// No indicators here — recurse into subdirectories if depth allows
+	if depth >= maxScanDepth {
+		return
+	}
+
+	entries, err := os.ReadDir(absPath)
+	if err != nil {
+		return
+	}
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		// Guardrail 1: skip-list applies at EVERY depth
+		if shouldSkipDir(e.Name()) {
+			continue
+		}
+		childRel := filepath.Join(relPath, e.Name())
+		scanRecursive(result, root, childRel, depth+1, scanned)
+	}
 }
 
 func scanDir(absPath, relPath string) (DirEntry, error) {
@@ -118,10 +185,15 @@ func scanDir(absPath, relPath string) (DirEntry, error) {
 
 	for _, indicator := range knownIndicators {
 		if strings.Contains(indicator, "*") {
-			matches, err := filepath.Glob(filepath.Join(absPath, indicator))
-			if err == nil && len(matches) > 0 {
-				for _, m := range matches {
-					entry.Files = append(entry.Files, filepath.Base(m))
+			files, err := os.ReadDir(absPath)
+			if err == nil {
+				for _, f := range files {
+					if !f.IsDir() {
+						matched, errMatch := filepath.Match(indicator, f.Name())
+						if errMatch == nil && matched {
+							entry.Files = append(entry.Files, f.Name())
+						}
+					}
 				}
 			}
 		} else {

@@ -15,7 +15,9 @@ var spinStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 // SpinUntil shows a spinner with label until done() returns true
 func SpinUntil(label string, action func()) {
 	done := make(chan struct{})
+	exited := make(chan struct{})
 	go func() {
+		defer close(exited)
 		i := 0
 		for {
 			select {
@@ -33,6 +35,7 @@ func SpinUntil(label string, action func()) {
 	}()
 	action()
 	close(done)
+	<-exited
 	// Clear the line and print the success checkmark with a cleaned label
 	var cleanLabel string
 	if strings.HasPrefix(label, "relaunching ") {

@@ -57,12 +57,21 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Catch Ctrl+C / SIGINT cleanly
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	cancelChan := make(chan struct{})
 	go func() {
-		<-sigChan
-		process.UnlockRegistry(cwd)
-		fmt.Println()
-		ui.Warn("Initialization aborted. No creo.yml was written.")
-		os.Exit(0)
+		select {
+		case <-sigChan:
+			process.UnlockRegistry(cwd)
+			fmt.Println()
+			ui.Warn("Initialization aborted. No creo.yml was written.")
+			os.Exit(0)
+		case <-cancelChan:
+			return
+		}
+	}()
+	defer func() {
+		close(cancelChan)
+		signal.Stop(sigChan)
 	}()
 
 	ui.PrintBannerWithGlitch()
@@ -95,13 +104,20 @@ func runInit(cmd *cobra.Command, args []string) error {
 	cmdCol := lipgloss.NewStyle().Width(30)
 
 	for _, d := range detected {
-		fmt.Printf("  %s %s %s\n",
+		confSuffix := ""
+		if d.Confidence == "low" {
+			confSuffix = ui.Dim.Render(" (low confidence)")
+		}
+		fmt.Printf("  %s %s %s%s\n",
 			nameCol.Render(ui.Truncate(d.Name, maxNameLen)),
 			frameworkCol.Render(ui.Truncate(d.Framework, 16)),
 			cmdCol.Render(ui.Truncate(d.SuggestedCmd, 30)),
+			confSuffix,
 		)
 	}
 	fmt.Println()
+
+	printUndetectedHints(cwd, detected)
 
 	var cfg *config.Config
 	if len(detected) > 0 {
@@ -220,3 +236,47 @@ func printConfigSummary(cfg *config.Config) {
 	}
 	fmt.Println()
 }
+
+// printUndetectedHints checks for root-level directories that match common service
+// folder names but weren't detected as services. Prints a soft hint — not a blocker.
+// Intentionally excludes "app" and "ui" to avoid false positives with Next.js app/
+// router directories and ui/ component libraries that aren't standalone services.
+func printUndetectedHints(cwd string, detected []bootstrap.DetectedService) {
+	commonNames := map[string]bool{
+		"frontend": true, "client": true, "web": true,
+		"backend": true, "server": true, "api": true,
+	}
+
+	entries, err := os.ReadDir(cwd)
+	if err != nil {
+		return
+	}
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		name := strings.ToLower(e.Name())
+		if !commonNames[name] {
+			continue
+		}
+
+		// Check if any detected service path starts with this folder
+		covered := false
+		for _, d := range detected {
+			normalizedPath := filepath.ToSlash(d.Path)
+			if normalizedPath == name || strings.HasPrefix(normalizedPath, name+"/") {
+				covered = true
+				break
+			}
+		}
+
+		if !covered {
+			ui.Info(fmt.Sprintf(
+				"Noticed a '%s' folder but couldn't confirm its stack — you'll be able to add it manually in the next step.",
+				e.Name(),
+			))
+		}
+	}
+}
+

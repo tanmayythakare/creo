@@ -342,7 +342,7 @@ func detectEntry(root string, entry DirEntry) DetectedService {
 	if fileSet["Makefile"] {
 		svc.Framework = "Make"
 		svc.SuggestedCmd = checkMakefileTarget(root, entry.Path)
-		svc.Confidence = "medium"
+		svc.Confidence = "low"
 		return svc
 	}
 	// Procfile: parse processes and use first web: process if available (#11).
@@ -358,7 +358,7 @@ func detectEntry(root string, entry DirEntry) DetectedService {
 	if fileSet["index.html"] {
 		svc.Framework = "HTML/CSS/JS"
 		svc.SuggestedCmd = "npx serve ."
-		svc.Confidence = "medium"
+		svc.Confidence = "low"
 		return svc
 	}
 	if fileSet["index.php"] {

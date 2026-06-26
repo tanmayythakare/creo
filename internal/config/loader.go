@@ -183,8 +183,21 @@ func validate(cfg *Config) error {
 		}
 	}
 
-	// Validate workflow service references
+	// Validate workflow service references & names
 	for wfName, services := range cfg.Workflows {
+		if strings.TrimSpace(wfName) == "" {
+			return fmt.Errorf("✗ workflow name cannot be empty")
+		}
+
+		matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, wfName)
+		if !matched {
+			return fmt.Errorf("✗ invalid character in workflow name: %q", wfName)
+		}
+
+		if isBuiltinCommand(wfName) {
+			return fmt.Errorf("✗ workflow name %q conflicts with built-in command", wfName)
+		}
+
 		for _, svcName := range services {
 			if _, ok := cfg.Services[svcName]; !ok {
 				return fmt.Errorf("✗ workflow '%s' references unknown service '%s'. Fix: Remove '%s' from workflow or define it in 'services:'", wfName, svcName, svcName)
@@ -192,4 +205,18 @@ func validate(cfg *Config) error {
 		}
 	}
 	return nil
+}
+
+func isBuiltinCommand(name string) bool {
+	builtins := map[string]bool{
+		"init":    true,
+		"up":      true,
+		"status":  true,
+		"stop":    true,
+		"restart": true,
+		"doctor":  true,
+		"version": true,
+		"help":    true,
+	}
+	return builtins[strings.ToLower(name)]
 }

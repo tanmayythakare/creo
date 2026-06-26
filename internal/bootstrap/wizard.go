@@ -34,7 +34,11 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 			fmt.Println("    (no services added yet)")
 		} else {
 			for i, s := range services {
-				fmt.Printf("    [%d] %s (path: %s) → %s\n", i+1, s.Name, s.Path, s.SuggestedCmd)
+				confSuffix := ""
+				if s.Confidence == "low" {
+					confSuffix = ui.Dim.Render(" (low confidence)")
+				}
+				fmt.Printf("    [%d] %s (path: %s) → %s%s\n", i+1, s.Name, s.Path, s.SuggestedCmd, confSuffix)
 			}
 		}
 		fmt.Println()
@@ -386,14 +390,39 @@ func RunWizard(detected []DetectedService) (*config.Config, error) {
 		}
 
 		fmt.Printf("  Available services: %s\n", strings.Join(serviceNames, ", "))
-		raw := ui.Ask("  Services (comma-separated)", strings.Join(serviceNames, ","))
-
 		var selected []string
-		for _, s := range strings.Split(raw, ",") {
-			s = strings.TrimSpace(s)
-			if s != "" {
-				selected = append(selected, s)
+		for {
+			raw := ui.Ask("  Services (comma-separated)", strings.Join(serviceNames, ","))
+			selected = nil
+			var invalidServices []string
+
+			for _, s := range strings.Split(raw, ",") {
+				s = strings.TrimSpace(s)
+				if s != "" {
+					exists := false
+					for _, existing := range serviceNames {
+						if existing == s {
+							exists = true
+							break
+						}
+					}
+					if exists {
+						selected = append(selected, s)
+					} else {
+						invalidServices = append(invalidServices, s)
+					}
+				}
 			}
+
+			if len(invalidServices) > 0 {
+				ui.Warn(fmt.Sprintf("The following service(s) do not exist: %s. Please enter only valid services.", strings.Join(invalidServices, ", ")))
+				continue
+			}
+			if len(selected) == 0 {
+				ui.Warn("Workflow must contain at least one service. Please try again.")
+				continue
+			}
+			break
 		}
 
 		cfg.Workflows[wfName] = selected

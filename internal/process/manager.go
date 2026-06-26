@@ -10,7 +10,7 @@ import (
 	"github.com/tanmayythakare/creo/internal/ui"
 )
 
-// IsRunning checks if a service's PID is alive and belongs to a terminal shell
+// IsRunning checks if a service's PID is alive and belongs to an active terminal shell running a command
 func IsRunning(reg Registry, name string) (int, bool) {
 	pid, ok := reg[name]
 	if !ok || pid <= 0 {
@@ -28,7 +28,15 @@ func IsRunning(reg Registry, name string) (int, bool) {
 		return 0, false
 	}
 
-	return pid, IsTerminalProcess(pid)
+	isTerminal := IsTerminalProcess(pid)
+	if isTerminal {
+		hasChildren, err := HasChildProcesses(pid)
+		if err != nil || !hasChildren {
+			return 0, false
+		}
+	}
+
+	return pid, true
 }
 
 // VerifyPID checks if the recorded PID is stale or reused, and prompts the user to clear it if reused.
@@ -51,7 +59,12 @@ func VerifyPID(reg Registry, name, root string) (int, bool, error) {
 	}
 
 	if IsTerminalProcess(pid) {
-		return pid, true, nil
+		hasChildren, err := HasChildProcesses(pid)
+		if err == nil && hasChildren {
+			return pid, true, nil
+		}
+		_ = RemovePID(root, name)
+		return 0, false, nil
 	}
 
 	// PID reuse detected!

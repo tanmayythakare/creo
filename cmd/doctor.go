@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -38,6 +39,12 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.Load(cwd)
 	if err != nil {
+		if _, statErr := os.Getwd(); statErr == nil {
+			if _, statErr := os.Stat(filepath.Join(cwd, "creo.yml")); statErr == nil {
+				ui.Error(fmt.Sprintf("Invalid creo.yml configuration: %v", err))
+				return nil
+			}
+		}
 		ui.Warn("No creo.yml found. Running system checks only. Run: creo init")
 		cfg = nil
 	}

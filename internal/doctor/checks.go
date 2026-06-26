@@ -131,10 +131,32 @@ func inferRequiredTools(command string) []string {
 	case strings.HasPrefix(cmd, "bun"):
 		return []string{"bun"}
 	default:
-		// Try to extract the first word as the binary
+		// Try to extract the first word as the binary, only if it's on our strict allowlist
 		parts := strings.Fields(cmd)
 		if len(parts) > 0 {
-			return []string{parts[0]}
+			binary := parts[0]
+			allowlist := map[string]bool{
+				"go":      true,
+				"node":    true,
+				"java":    true,
+				"python":  true,
+				"python3": true,
+				"npm":     true,
+				"npx":     true,
+				"cargo":   true,
+				"docker":  true,
+				"dotnet":  true,
+				"mvn":     true,
+				"gradle":  true,
+				"php":     true,
+				"ruby":    true,
+				"flutter": true,
+				"deno":    true,
+				"bun":     true,
+			}
+			if allowlist[binary] {
+				return []string{binary}
+			}
 		}
 		return nil
 	}

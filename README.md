@@ -2,9 +2,9 @@
   <img src="assets/logo.png" alt="creo" width="300">
 </p>
 <p align="center">
-  <a href="https://github.com/tanmaythakare/creo/actions/workflows/ci.yml"><img src="https://github.com/tanmaythakare/creo/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/tanmaythakare/creo/releases/latest"><img src="https://img.shields.io/github/v/release/tanmaythakare/creo?color=4ade80&label=release" alt="Release"></a>
-  <a href="https://github.com/tanmaythakare/creo/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
+  <a href="https://github.com/tanmayythakare/creo/actions/workflows/ci.yml"><img src="https://github.com/tanmayythakare/creo/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/tanmayythakare/creo/releases/latest"><img src="https://img.shields.io/github/v/release/tanmayythakare/creo?color=4ade80&label=release" alt="Release"></a>
+  <a href="https://github.com/tanmayythakare/creo/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
   <img src="https://img.shields.io/badge/platform-Windows-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go version">
 </p>
@@ -21,7 +21,7 @@
 
 ---
 
-## How it Works
+## How it works
 
 <p align="center">
   <img src="assets/flow.png" alt="Creo Architecture Flow">
@@ -33,20 +33,20 @@
 
 ### For users — download the binary
 
-1. Download `creo.exe` from the [latest release](https://github.com/tanmaythakare/creo/releases/latest)
+1. Download `creo.exe` from the [latest release](https://github.com/tanmayythakare/creo/releases/latest)
 2. Place it somewhere (e.g. `C:\Tools\creo.exe`)
 3. Add that folder to your PATH (System → Environment Variables → Path → Edit → New)
 4. Open a new terminal and run:
 
 ```powershell
 creo version
-# creo v0.1.0
+# Prints the current version info
 ```
 
 ### For contributors — build from source
 
 ```powershell
-git clone https://github.com/tanmaythakare/creo
+git clone https://github.com/tanmayythakare/creo
 cd creo
 go build -o creo.exe .
 go test ./...
@@ -57,7 +57,7 @@ go test ./...
 ### For testers — verify on your stack
 
 ```powershell
-git clone https://github.com/tanmaythakare/creo
+git clone https://github.com/tanmayythakare/creo
 cd creo
 go build -o creo.exe .
 # Place it in your PATH, then in any project:
@@ -67,7 +67,7 @@ creo <workflow-name>
 
 ---
 
-## How it works
+## Quick Flow
 
 ```
 creo init  →  detects your stack  →  generates creo.yml  →  creo <workflow>  →  all tabs open  →  start coding
@@ -133,13 +133,16 @@ workflows:
 ```
 
 > [!TIP]
-> Add `.creo/` to your `.gitignore`. It stores machine-specific runtime state (PIDs, lock files) that should never be committed.
+> Add `.creo/` to your `.gitignore`. It stores machine-specific runtime state (PIDs, lock files) that should never be committed:
+> ```gitignore
+> .creo/
+> ```
 
 ---
 
 ## Detected stacks
 
-`creo init` auto-detects 40+ frameworks including:
+`creo init` auto-detects 40+ frameworks across nested folder structures (scanning up to 3 directory levels deep, e.g. `apps/frontend/my-app/`), including:
 
 React · Angular · Next.js · Vue · NestJS · Express · Django · FastAPI · Laravel · Flutter · Spring Boot (Maven + Gradle) · ASP.NET Core · Go · Docker Compose · Turborepo · and more.
 
@@ -191,7 +194,10 @@ The terminal tab stays open with output visible. `creo status` correctly reports
 Yes. `boom`, `dev`, `full-project` — any key under `workflows:` in `creo.yml` works. Run with `creo <name>`.
 
 **Can I use special characters in service names?**
-Service names are restricted to `[a-zA-Z0-9_-]` to keep logs and registry records clean.
+Service names are restricted to alphanumeric characters, underscores, hyphens, and periods (`^[a-zA-Z0-9_.-]+$`) to keep logs and registry records clean. For example, `Next.js` or `myorg.frontend` work perfectly as service names now.
+
+**Does `creo doctor` run my custom script binaries?**
+No. `creo doctor` uses a strict allowlist of known compiler and runtime binaries (such as `node`, `java`, `go`, `python`, `npm`, `cargo`, etc.) to verify tool availability, and safely skips checking custom or arbitrary script binaries.
 
 **What does `.creo/` contain?**
 Runtime state only — `pids.json` (active process registry) and `creo.lock` (instance lock). Never commit it.

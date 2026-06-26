@@ -1,9 +1,14 @@
 # Binary
 creo.exe
 creo
+*.exe
+
+# Local scratch directory
+scratch/
 
 # Runtime state (local only, never commit)
 .creo/
+tmp_*.pid
 
 # Go build artifacts
 *.test

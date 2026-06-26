@@ -29,7 +29,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.Load(cwd)
 	if err != nil {
-		ui.Error("No creo.yml found. Run: creo init")
+		ui.Error(err.Error())
 		return nil
 	}
 
@@ -38,8 +38,25 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	fmt.Println(ui.SectionHeader("status"))
 	fmt.Println()
 
-	nameCol := lipgloss.NewStyle().Width(24)
-	cmdCol := lipgloss.NewStyle().Width(24)
+	maxNameLen := 12
+	maxCmdLen := 20
+	for name, svc := range cfg.Services {
+		if len(name) > maxNameLen {
+			maxNameLen = len(name)
+		}
+		if len(svc.Command) > maxCmdLen {
+			maxCmdLen = len(svc.Command)
+		}
+	}
+	if maxNameLen > 24 {
+		maxNameLen = 24
+	}
+	if maxCmdLen > 30 {
+		maxCmdLen = 30
+	}
+
+	nameCol := lipgloss.NewStyle().Width(maxNameLen)
+	cmdCol := lipgloss.NewStyle().Width(maxCmdLen)
 	statusCol := lipgloss.NewStyle().Width(12)
 
 	for name, svc := range cfg.Services {
@@ -54,8 +71,8 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 		fmt.Printf("  %s %s %s %s\n",
 			sym,
-			nameCol.Render(ui.Truncate(name, 24)),
-			cmdCol.Render(ui.Truncate(svc.Command, 24)),
+			nameCol.Render(ui.Truncate(name, maxNameLen)),
+			cmdCol.Render(ui.Truncate(svc.Command, maxCmdLen)),
 			statusCol.Render(statusText),
 		)
 	}

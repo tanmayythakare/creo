@@ -34,7 +34,7 @@ func runRestart(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.Load(cwd)
 	if err != nil {
-		ui.Error("No creo.yml found. Run: creo init")
+		ui.Error(err.Error())
 		return nil
 	}
 

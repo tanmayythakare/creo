@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -55,4 +56,38 @@ func IsTerminalProcess(pid int) bool {
 		}
 	}
 	return false
+}
+
+// HasChildProcesses checks if a parent PID has any active child processes on Windows
+func HasChildProcesses(parentPID int) (bool, error) {
+	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return false, err
+	}
+	defer windows.CloseHandle(snapshot)
+
+	var entry windows.ProcessEntry32
+	entry.Size = uint32(unsafe.Sizeof(entry))
+
+	err = windows.Process32First(snapshot, &entry)
+	if err != nil {
+		if err == windows.ERROR_NO_MORE_FILES {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for {
+		if int(entry.ParentProcessID) == parentPID {
+			return true, nil
+		}
+		err = windows.Process32Next(snapshot, &entry)
+		if err != nil {
+			if err == windows.ERROR_NO_MORE_FILES {
+				break
+			}
+			return false, err
+		}
+	}
+	return false, nil
 }

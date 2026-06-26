@@ -229,11 +229,22 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 
 		_, _ = multi.Stop()
 
+		// Wait a small buffer time (e.g., 500ms) to detect immediate startup crashes
+		time.Sleep(500 * time.Millisecond)
+
 		// Print active services & clickable URLs summary
 		var startedServices []string
+		var crashedServices []string
+		reg, _ := process.LoadRegistry(root)
+
 		for _, name := range toLaunch {
 			if !failed[name] && !pending[name] {
-				startedServices = append(startedServices, name)
+				_, running := process.IsRunning(reg, name)
+				if running {
+					startedServices = append(startedServices, name)
+				} else {
+					crashedServices = append(crashedServices, name)
+				}
 			}
 		}
 
@@ -248,17 +259,25 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 					for _, p := range ports {
 						urls = append(urls, fmt.Sprintf("http://localhost:%d", p))
 					}
-					fmt.Printf("  • %s: %s (Logs in terminal tab)\n", ui.Bold.Render(name), strings.Join(urls, ", "))
+					fmt.Printf("  • %s: %s (Logs in Windows Terminal tab)\n", ui.Bold.Render(name), strings.Join(urls, ", "))
 				} else {
-					fmt.Printf("  • %s: Started (Logs in terminal tab)\n", ui.Bold.Render(name))
+					fmt.Printf("  • %s: Started (Logs in Windows Terminal tab)\n", ui.Bold.Render(name))
 				}
+			}
+		}
+
+		if len(crashedServices) > 0 {
+			fmt.Println()
+			ui.Section("Failed to Start (Crashed)")
+			for _, name := range crashedServices {
+				fmt.Printf("  • %s: %s\n", ui.Bold.Render(name), ui.Dim.Render("Process exited. Check Windows Terminal tab for error logs."))
 			}
 		}
 	}
 
 	duration := time.Since(start).Seconds()
 	fmt.Println()
-	fmt.Printf("  done in %.1fs\n", duration)
+	fmt.Printf("  Done in %.1fs\n", duration)
 	fmt.Println()
 
 	return nil
@@ -266,7 +285,7 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 
 // Extract ports from command (looks for 4-digit or 5-digit numbers)
 func findPorts(command string) []int {
-	re := regexp.MustCompile(`\b(3\d{3}|4\d{3}|5\d{3}|8\d{3}|9\d{3})\b`)
+	re := regexp.MustCompile(`\b([1-9]\d{3,4})\b`)
 	matches := re.FindAllString(command, -1)
 	var ports []int
 	seen := make(map[int]bool)

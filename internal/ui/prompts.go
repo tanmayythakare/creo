@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,7 +18,13 @@ func Ask(question, defaultVal string) string {
 		fmt.Printf("  %s: ", question)
 	}
 
-	input, _ := reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println()
+		Error("Failed to read input (end of file or closed input). Aborting.")
+		cleanLockOnExit()
+		os.Exit(1)
+	}
 	input = strings.TrimSpace(input)
 
 	if input == "" {
@@ -34,13 +41,33 @@ func Confirm(question string, defaultYes bool) bool {
 	}
 
 	fmt.Printf("  %s %s ", question, Dim.Render(hint))
-	input, _ := reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println()
+		Error("Failed to read input (end of file or closed input). Aborting.")
+		cleanLockOnExit()
+		os.Exit(1)
+	}
 	input = strings.ToLower(strings.TrimSpace(input))
 
 	if input == "" {
 		return defaultYes
 	}
 	return input == "y" || input == "yes"
+}
+
+func cleanLockOnExit() {
+	cwd, err := os.Getwd()
+	if err == nil {
+		lockPath := filepath.Join(cwd, ".creo", "creo.lock")
+		data, err := os.ReadFile(lockPath)
+		if err == nil {
+			var pid int
+			if _, scanErr := fmt.Sscanf(string(data), "%d", &pid); scanErr == nil && pid == os.Getpid() {
+				_ = os.Remove(lockPath)
+			}
+		}
+	}
 }
 
 // Success prints a styled success line
