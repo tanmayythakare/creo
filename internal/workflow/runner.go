@@ -32,16 +32,14 @@ func LaunchTab(name string, svc config.Service, root string, verbose bool) error
 	pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", name))
 	_ = os.Remove(pidFile)
 
-	writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter """ProcessId=$PID""").ParentProcessId ^| Out-File -FilePath '%s' -Encoding ascii`, pidFile)
+	writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter ('ProcessId=' + $PID)).ParentProcessId > "%s"`, pidFile)
 	safeCmd := strings.ReplaceAll(svc.Command, ";", `\;`)
 	shellCmd := fmt.Sprintf(`%s && %s`, writePIDCmd, safeCmd)
 
 	args := []string{
-		"-w", "0",
 		"new-tab",
 		"-d", absPath,
 		"--title", name,
-		"--suppressApplicationTitle",
 		"cmd", "/k", shellCmd,
 	}
 
@@ -54,6 +52,9 @@ func LaunchTab(name string, svc config.Service, root string, verbose bool) error
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("✗ failed to start wt.exe: %v. Fix: Check if Windows Terminal is correctly installed", err)
 	}
+
+	// Give wt.exe time to register its window before any subsequent calls
+	time.Sleep(200 * time.Millisecond)
 
 	return nil
 }
@@ -68,16 +69,16 @@ func buildWTArgs(services []serviceEntry, root string) []string {
 		pidFile := filepath.Join(root, ".creo", fmt.Sprintf("tmp_%s.pid", entry.name))
 		_ = os.Remove(pidFile)
 
-		writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter """ProcessId=$PID""").ParentProcessId ^| Out-File -FilePath '%s' -Encoding ascii`, pidFile)
+		writePIDCmd := fmt.Sprintf(`powershell -NoProfile -Command (Get-CimInstance Win32_Process -Filter ('ProcessId=' + $PID)).ParentProcessId > "%s"`, pidFile)
 		safeCmd := strings.ReplaceAll(entry.svc.Command, ";", `\;`)
 		shellCmd := fmt.Sprintf(`%s && %s`, writePIDCmd, safeCmd)
 
 		if i == 0 {
 			// First tab: attach to window 0 then new-tab
-			args = append(args, "-w", "0", "new-tab", "-d", absPath, "--title", entry.name, "--suppressApplicationTitle", "cmd", "/k", shellCmd)
+			args = append(args, "new-tab", "-d", absPath, "--title", entry.name, "cmd", "/k", shellCmd)
 		} else {
 			// Additional tabs: semicolon separator then new-tab
-			args = append(args, ";", "new-tab", "-d", absPath, "--title", entry.name, "--suppressApplicationTitle", "cmd", "/k", shellCmd)
+			args = append(args, ";", "new-tab", "-d", absPath, "--title", entry.name, "cmd", "/k", shellCmd)
 		}
 	}
 
@@ -123,13 +124,12 @@ func LaunchAll(cfg *config.Config, serviceNames []string, root string, verbose b
 		return fmt.Errorf("✗ failed to start wt.exe: %v. Fix: Check if Windows Terminal is correctly installed", err)
 	}
 
-	CollectAndRegisterPIDs(root, serviceNames)
 	return nil
 }
 
 // CollectAndRegisterPIDs polls for temporary PID files, reads them, saves them to registry, and deletes them
 func CollectAndRegisterPIDs(root string, serviceNames []string) {
-	endTime := time.Now().Add(15 * time.Second)
+	endTime := time.Now().Add(30 * time.Second)
 
 	pending := make(map[string]bool)
 	for _, name := range serviceNames {

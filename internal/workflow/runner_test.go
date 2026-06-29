@@ -50,4 +50,14 @@ func TestBuildWTArgs(t *testing.T) {
 	if strings.Contains(argsStr, `cd /d`) {
 		t.Errorf("Expected 'cd /d' to be removed from command, got: %s", argsStr)
 	}
+
+	// Test 5: Ensure -w 0 is NOT used (prevents race conditions with concurrent window creation)
+	if strings.Contains(argsStr, `-w 0`) {
+		t.Errorf("Expected '-w 0' to be removed to avoid race conditions, got: %s", argsStr)
+	}
+
+	// Test 6: Ensure --suppressApplicationTitle is NOT used (can cause silent failures on older WT)
+	if strings.Contains(argsStr, `--suppressApplicationTitle`) {
+		t.Errorf("Expected '--suppressApplicationTitle' to be removed, got: %s", argsStr)
+	}
 }
