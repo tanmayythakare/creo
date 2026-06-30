@@ -69,6 +69,11 @@ func TestResolveCommand(t *testing.T) {
 	tempDir := t.TempDir()
 
 	t.Run("resolve maven wrapper mvnw.cmd", func(t *testing.T) {
+		// Temporarily clear PATH so global binaries like mvn are not resolved via LookPath
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", "")
+		defer os.Setenv("PATH", oldPath)
+
 		svcPath := "java-app"
 		appPath := filepath.Join(tempDir, svcPath)
 		_ = os.MkdirAll(appPath, 0755)
@@ -92,6 +97,11 @@ func TestResolveCommand(t *testing.T) {
 	})
 
 	t.Run("resolve node local binary", func(t *testing.T) {
+		// Temporarily clear PATH so global binaries like vite are not resolved via LookPath
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", "")
+		defer os.Setenv("PATH", oldPath)
+
 		svcPath := "node-app"
 		appPath := filepath.Join(tempDir, svcPath)
 		nodeBinPath := filepath.Join(appPath, "node_modules", ".bin")
