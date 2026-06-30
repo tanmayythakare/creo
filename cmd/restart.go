@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tanmayythakare/creo/internal/config"
@@ -101,6 +103,28 @@ func runRestart(cmd *cobra.Command, args []string) error {
 			_ = process.SetPID(cwd, name, oldPID)
 		}
 		return nil
+	}
+
+	// Poll for the new PID file to register it
+	endTime := time.Now().Add(10 * time.Second)
+	pidFile := filepath.Join(cwd, ".creo", fmt.Sprintf("tmp_%s.pid", name))
+	registered := false
+	for time.Now().Before(endTime) {
+		time.Sleep(100 * time.Millisecond)
+		content, err := os.ReadFile(pidFile)
+		if err == nil {
+			pidStr := strings.TrimSpace(string(content))
+			if pid, err := strconv.Atoi(pidStr); err == nil && pid > 0 {
+				_ = process.SetPID(cwd, name, pid)
+				_ = os.Remove(pidFile)
+				registered = true
+				break
+			}
+		}
+	}
+
+	if !registered {
+		ui.Warn(fmt.Sprintf("restarted %s, but timed out waiting for its PID to register", name))
 	}
 
 	fmt.Println()

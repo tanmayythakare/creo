@@ -1,7 +1,7 @@
 # Contributing
 
 ## Setup
-git clone https://github.com/tanmaythakare/creo
+git clone https://github.com/tanmayythakare/creo
 cd creo
 go mod tidy
 go build -o creo.exe .

@@ -183,10 +183,10 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 		// to update spinners for any that completed there and catch any remaining)
 		endTime := time.Now().Add(30 * time.Second)
 		pending := make(map[string]bool)
+		latestReg, _ := process.LoadRegistry(root)
 		for _, name := range toLaunch {
 			if !failed[name] {
 				// Check if PID was already collected by LaunchAll's CollectAndRegisterPIDs
-				latestReg, _ := process.LoadRegistry(root)
 				if pid, ok := latestReg[name]; ok && pid > 0 {
 					sp := spinners[name]
 					sp.Success(name)

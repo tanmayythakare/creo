@@ -31,17 +31,35 @@
 
 ## Install
 
-### For users — download the binary
+### For users — via Scoop (Recommended)
+
+1. Make sure you have [Scoop](https://scoop.sh) installed. If not, open PowerShell and run:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   irm get.scoop.sh | iex
+   ```
+2. Add the custom creo bucket:
+   ```powershell
+   scoop bucket add creo-bucket https://github.com/tanmayythakare/scoop-bucket
+   ```
+3. Install `creo`:
+   ```powershell
+   scoop install creo
+   ```
+4. Verify the installation:
+   ```powershell
+   creo version
+   ```
+
+### Alternative — manual binary download
 
 1. Download `creo.exe` from the [latest release](https://github.com/tanmayythakare/creo/releases/latest)
-2. Place it somewhere (e.g. `C:\Tools\creo.exe`)
+2. Place it in a folder (e.g. `C:\Tools\creo.exe`)
 3. Add that folder to your PATH (System → Environment Variables → Path → Edit → New)
 4. Open a new terminal and run:
-
-```powershell
-creo version
-# Prints the current version info
-```
+   ```powershell
+   creo version
+   ```
 
 ### For contributors — build from source
 
@@ -60,7 +78,7 @@ go test ./...
 git clone https://github.com/tanmayythakare/creo
 cd creo
 go build -o creo.exe .
-# Place it in your PATH, then in any project:
+# Place it in your PATH (or run ./creo.exe directly), then in any project:
 creo init
 creo <workflow-name>
 ```

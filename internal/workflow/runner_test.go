@@ -1,10 +1,13 @@
 package workflow
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/tanmayythakare/creo/internal/config"
+	"github.com/tanmayythakare/creo/internal/process"
 )
 
 func TestBuildWTArgs(t *testing.T) {
@@ -61,3 +64,40 @@ func TestBuildWTArgs(t *testing.T) {
 		t.Errorf("Expected '--suppressApplicationTitle' to be removed, got: %s", argsStr)
 	}
 }
+
+func TestCollectAndRegisterPIDs(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Ensure .creo directory exists
+	creoDir := filepath.Join(tempDir, ".creo")
+	err := os.MkdirAll(creoDir, 0755)
+	if err != nil {
+		t.Fatalf("failed to create .creo dir: %v", err)
+	}
+
+	// Write a mock temporary PID file for "web" service
+	pidFile := filepath.Join(creoDir, "tmp_web.pid")
+	err = os.WriteFile(pidFile, []byte("9876\n"), 0644)
+	if err != nil {
+		t.Fatalf("failed to write mock PID file: %v", err)
+	}
+
+	// Collect PIDs (should find "web" immediately and exit)
+	CollectAndRegisterPIDs(tempDir, []string{"web"})
+
+	// Verify PID is registered
+	reg, err := process.LoadRegistry(tempDir)
+	if err != nil {
+		t.Fatalf("failed to load process registry: %v", err)
+	}
+
+	if pid, ok := reg["web"]; !ok || pid != 9876 {
+		t.Errorf("expected 'web' to be registered with PID 9876, got ok=%t, pid=%d", ok, pid)
+	}
+
+	// Verify temporary PID file was cleaned up
+	if _, err := os.Stat(pidFile); !os.IsNotExist(err) {
+		t.Error("expected temporary PID file to be deleted")
+	}
+}
+

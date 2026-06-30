@@ -3,12 +3,18 @@ package ui
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var reader = bufio.NewReader(os.Stdin)
+
+// SetReader overrides the default reader (used for testing prompts)
+func SetReader(r io.Reader) {
+	reader = bufio.NewReader(r)
+}
 
 // Ask prompts for a string input with an optional default value
 func Ask(question, defaultVal string) string {

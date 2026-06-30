@@ -11,7 +11,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print creo version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("  %s  %s\n", ui.Accent.Render("creo"), ui.Dim.Render("v0.1.0"))
+		fmt.Printf("  %s  %s\n", ui.Accent.Render("creo"), ui.Dim.Render(ui.Version))
 	},
 }
 

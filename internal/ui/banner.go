@@ -17,6 +17,8 @@ const asciiArt = `
 ╚██████╗██║  ██║███████╗╚██████╔╝
  ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝`
 
+var Version = "v0.1.0"
+
 func PrintBanner() {
 	accent := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("99")).
@@ -28,7 +30,7 @@ func PrintBanner() {
 	fmt.Println(accent.Render(asciiArt))
 	fmt.Println()
 	fmt.Println(dim.Render("  Welcome to Creo"))
-	fmt.Println(dim.Render("  v0.1.0"))
+	fmt.Println(dim.Render("  " + Version))
 	fmt.Println()
 }
 
@@ -80,7 +82,7 @@ func PrintBannerWithGlitch() {
 
 		fmt.Println()
 		fmt.Println(glitchStyle.Render("  Welcome to Creo"))
-		fmt.Println(glitchStyle.Render("  v0.1.0"))
+		fmt.Println(glitchStyle.Render("  " + Version))
 		fmt.Println()
 
 		time.Sleep(110 * time.Millisecond)

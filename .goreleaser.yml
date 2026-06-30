@@ -12,6 +12,8 @@ builds:
     goarch:
       - amd64
     binary: creo
+    ldflags:
+      - -s -w -X github.com/tanmayythakare/creo/internal/ui.Version=v{{.Version}}
 
 archives:
   - format: zip
@@ -24,3 +26,14 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^chore:'
+
+scoops:
+  - repository:
+      owner: tanmayythakare
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_PAT }}"
+    directory: bucket
+    homepage: "https://github.com/tanmayythakare/creo"
+    description: "One command starts all your services in separate Windows Terminal tabs."
+    license: MIT
+

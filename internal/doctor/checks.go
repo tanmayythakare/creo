@@ -276,6 +276,10 @@ func CheckWTVersion() (string, string) {
 	if v == "" {
 		return "unknown", ""
 	}
+	// Take only the first line in case there are multiple installations
+	if idx := strings.Index(v, "\n"); idx != -1 {
+		v = strings.TrimSpace(v[:idx])
+	}
 	parts := strings.Split(v, ".")
 	if len(parts) >= 2 {
 		major, _ := strconv.Atoi(parts[0])
