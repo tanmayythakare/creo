@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"math/rand"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ const asciiArt = `
 ╚██████╗██║  ██║███████╗╚██████╔╝
  ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝`
 
-var Version = "v0.1.0"
+var Version = getDynamicVersion()
 
 func PrintBanner() {
 	accent := lipgloss.NewStyle().
@@ -93,4 +94,40 @@ func PrintBannerWithGlitch() {
 	// Clear from cursor to end of screen to erase glitch artifacts cleanly
 	fmt.Print("\033[J")
 	PrintBanner()
+}
+
+func getDynamicVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "v0.3.1"
+	}
+	
+	if info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	
+	var revision string
+	var modified bool
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value
+		case "vcs.modified":
+			modified = setting.Value == "true"
+		}
+	}
+	
+	if revision != "" {
+		short := revision
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		suffix := ""
+		if modified {
+			suffix = " (dirty)"
+		}
+		return fmt.Sprintf("v0.3.1-dev-%s%s", short, suffix)
+	}
+	
+	return "v0.3.1"
 }
