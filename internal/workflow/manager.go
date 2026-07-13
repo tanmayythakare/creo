@@ -176,6 +176,8 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 				failed[name] = true
 				sp := spinners[name]
 				sp.Fail(fmt.Sprintf("%s: %v", name, launchErr))
+				// Add a small delay to avoid pterm multi-printer cursor race conditions on Windows
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 
@@ -190,6 +192,8 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 				if pid, ok := latestReg[name]; ok && pid > 0 {
 					sp := spinners[name]
 					sp.Success(name)
+					// Add a small delay to avoid pterm multi-printer cursor race conditions on Windows
+					time.Sleep(100 * time.Millisecond)
 				} else {
 					pending[name] = true
 				}
@@ -210,6 +214,8 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 						delete(pending, name)
 						sp := spinners[name]
 						sp.Success(name)
+						// Add a small delay to avoid pterm multi-printer cursor race conditions on Windows
+						time.Sleep(100 * time.Millisecond)
 					}
 				}
 			}
@@ -221,6 +227,8 @@ func Start(cfg *config.Config, workflowName string, serviceNames []string, root 
 			_ = os.Remove(pidFile)
 			sp := spinners[name]
 			sp.Fail(fmt.Sprintf("%s: timed out waiting for process to start", name))
+			// Add a small delay to avoid pterm multi-printer cursor race conditions on Windows
+			time.Sleep(100 * time.Millisecond)
 		}
 
 		_, _ = multi.Stop()
