@@ -139,3 +139,58 @@ func StopAll(reg Registry, root string) map[string]int {
 	}
 	return results
 }
+
+// StopServiceSilent kills a single service without interactive prompts.
+// Used by commands like 'creo drop' where user confirmation was already provided.
+func StopServiceSilent(reg Registry, name, root string) (bool, int) {
+	pid, ok := reg[name]
+	if !ok || pid <= 0 {
+		return false, 0
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		_ = RemovePID(root, name)
+		return false, 0
+	}
+
+	if checkProcess(proc) != nil {
+		_ = RemovePID(root, name)
+		return false, 0
+	}
+
+	// Kill entire process tree
+	cmd := exec.Command("taskkill", "/F", "/T", "/PID", fmt.Sprintf("%d", pid))
+	if err := cmd.Run(); err != nil {
+		proc, errProc := os.FindProcess(pid)
+		if errProc == nil {
+			_ = proc.Kill()
+		}
+	}
+
+	// Wait/confirm process death (up to 1.5s)
+	for i := 0; i < 15; i++ {
+		_, stillRunning := IsRunning(reg, name)
+		if !stillRunning {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	_ = RemovePID(root, name)
+	return true, pid
+}
+
+// StopAllSilent kills every tracked service without interactive prompts.
+// Returns a map of service name -> PID for services that were actually killed.
+func StopAllSilent(reg Registry, root string) map[string]int {
+	results := make(map[string]int)
+	for name := range reg {
+		killed, pid := StopServiceSilent(reg, name, root)
+		if killed {
+			results[name] = pid
+		}
+	}
+	return results
+}
+

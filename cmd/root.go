@@ -176,8 +176,8 @@ func runRoot(cmd *cobra.Command, args []string) error {
 }
 
 func runStartupChecks(cmd *cobra.Command, args []string) error {
-	// Skip check for version or help commands
-	if cmd.Name() == "version" || cmd.Name() == "help" {
+	// Skip check for version, help, drop, or delete commands
+	if cmd.Name() == "version" || cmd.Name() == "help" || cmd.Name() == "drop" || cmd.Name() == "delete" {
 		return nil
 	}
 

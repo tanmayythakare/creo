@@ -118,6 +118,9 @@ creo restart frontend
 # Check all tools are installed
 creo doctor
 
+# Remove Creo from this project (stops services, deletes creo.yml and .creo/)
+creo drop             # or: creo delete
+
 # Show version
 creo version
 ```
@@ -176,6 +179,7 @@ React · Angular · Next.js · Vue · NestJS · Express · Django · FastAPI · 
 | `creo status` | Show running/stopped state of all services |
 | `creo restart [service]` | Stop and restart a service |
 | `creo doctor` | Check all required tools are installed |
+| `creo drop` (or `delete`) | Stop services and remove `creo.yml` and `.creo/` from project |
 | `creo version` | Print version |
 
 ---
@@ -186,7 +190,7 @@ React · Angular · Next.js · Vue · NestJS · Express · Django · FastAPI · 
 |---|---|
 | `--dry-run` | Show what would happen without doing it |
 | `--verbose` | Detailed output |
-| `--force` | Skip confirmation prompts |
+| `-f, --force` | Skip confirmation prompts (for `drop` and `init`) |
 
 ---
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.0] - 2026-09-29
+### Added
+- creo drop (alias: creo delete) — stops running services, removes creo.yml and .creo/ with reverse dissolve banner animation
+
 ## [0.1.0] - 2026-06-25
 ### Added
 - creo init — repo scanner, framework detector, interactive wizard

@@ -198,4 +198,41 @@ services:
 			t.Fatal("expected error for command containing newline, got nil")
 		}
 	})
+
+	t.Run("workflow name conflicts with drop builtin", func(t *testing.T) {
+		content := `
+project:
+  name: test
+services:
+  app:
+    command: run.sh
+workflows:
+  drop:
+    - app
+`
+		os.WriteFile(filepath.Join(tempDir, "creo.yml"), []byte(content), 0644)
+		_, err := Load(tempDir)
+		if err == nil {
+			t.Fatal("expected error for workflow name conflicting with 'drop', got nil")
+		}
+	})
+
+	t.Run("workflow name conflicts with delete builtin", func(t *testing.T) {
+		content := `
+project:
+  name: test
+services:
+  app:
+    command: run.sh
+workflows:
+  delete:
+    - app
+`
+		os.WriteFile(filepath.Join(tempDir, "creo.yml"), []byte(content), 0644)
+		_, err := Load(tempDir)
+		if err == nil {
+			t.Fatal("expected error for workflow name conflicting with 'delete', got nil")
+		}
+	})
 }
+

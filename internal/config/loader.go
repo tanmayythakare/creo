@@ -217,6 +217,8 @@ func isBuiltinCommand(name string) bool {
 		"doctor":  true,
 		"version": true,
 		"help":    true,
+		"drop":    true,
+		"delete":  true,
 	}
 	return builtins[strings.ToLower(name)]
 }
