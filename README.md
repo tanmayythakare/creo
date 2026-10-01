@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="creo" width="300">
+  <img src="assets/logo.png" alt="creo" width="600">
 </p>
 <p align="center">
   <a href="https://github.com/tanmayythakare/creo/actions/workflows/ci.yml"><img src="https://github.com/tanmayythakare/creo/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -7,11 +7,18 @@
   <a href="https://github.com/tanmayythakare/creo/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
   <img src="https://img.shields.io/badge/platform-Windows-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go version">
+  <a href="https://d1dd4k2s3qs7qc.cloudfront.net"><img src="https://img.shields.io/badge/Live%20Demo-Interactive%20Showcase-8b5cf6" alt="Live Demo"></a>
 </p>
 
 <p align="center">
   One command starts all your services in separate Windows Terminal tabs.<br>
   No scripts. No manual switching. Just run.
+</p>
+
+<p align="center">
+  <a href="https://d1dd4k2s3qs7qc.cloudfront.net">
+    <strong>Explore the Interactive 3D Showcase</strong>
+  </a>
 </p>
 
 ---
