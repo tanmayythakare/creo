@@ -242,3 +242,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). PRs require CI to pass and maintainer ap
 ## License
 
 MIT © 2026 Tanmay Thakare
+
+---
+
+<div align="center">
+  <a href="https://github.com/tanmayythakare">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=16&pause=2000&color=38BDF8&center=true&vCenter=true&width=330&lines=Built+by+Tanmay+Thakare" alt="Built by Tanmay Thakare" />
+  </a>
+</div>
