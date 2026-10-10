@@ -247,6 +247,6 @@ MIT © 2026 Tanmay Thakare
 
 <div align="center">
   <a href="https://github.com/tanmayythakare">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=16&pause=2000&color=38BDF8&center=true&vCenter=true&width=330&lines=Built+by+Tanmay+Thakare" alt="Built by Tanmay Thakare" />
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=16&pause=2000&color=38BDF8&center=true&vCenter=true&width=360&lines=Built+by+Tanmay+Thakare+%F0%9F%90%B1" alt="Built by Tanmay Thakare 🐱" />
   </a>
 </div>
