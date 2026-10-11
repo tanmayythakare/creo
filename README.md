@@ -7,7 +7,7 @@
   <a href="https://github.com/tanmayythakare/creo/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
   <img src="https://img.shields.io/badge/platform-Windows-orange" alt="Platform">
   <img src="https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go" alt="Go version">
-  <a href="https://d1dd4k2s3qs7qc.cloudfront.net"><img src="https://img.shields.io/badge/Live%20Demo-Interactive%20Showcase-8b5cf6" alt="Live Demo"></a>
+  <a href="https://creo.tanmayythakare.online"><img src="https://img.shields.io/badge/Live%20Demo-Interactive%20Showcase-8b5cf6" alt="Live Demo"></a>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://d1dd4k2s3qs7qc.cloudfront.net">
+  <a href="https://creo.tanmayythakare.online">
     <strong>Explore the Interactive 3D Showcase</strong>
   </a>
 </p>
